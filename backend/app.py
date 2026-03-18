@@ -83,10 +83,53 @@ def signup():
     else:
         return jsonify({"status": "error", "message": result})
 
+@app.route('/otp-request', methods=['POST'])
+def otp_request_api():
+    data = request.get_json()
+    identifier = data.get('identifier')
+    user_name = get_user_by_identifier(identifier)
+    if user_name:
+        otp = ''.join(random.choices(string.digits, k=6))
+        if store_otp(identifier, otp):
+            print(f"DEBUG: Sending OTP {otp} to {identifier}")
+            session['otp_identifier'] = identifier
+            return jsonify({"status": "success", "message": "OTP sent"})
+        return jsonify({"status": "error", "message": "Error storing OTP"})
+    return jsonify({"status": "error", "message": "User not found"})
+
+@app.route('/otp-verify', methods=['POST'])
+def otp_verify_api():
+    data = request.get_json()
+    otp = data.get('otp')
+    identifier = session.get('otp_identifier')
+    if not identifier:
+        return jsonify({"status": "error", "message": "No OTP session active"})
+    
+    if verify_otp(identifier, otp):
+        user_name = get_user_by_identifier(identifier)
+        session['user_name'] = user_name
+        session.pop('otp_identifier', None)
+        return jsonify({"status": "success", "message": "OTP verified"})
+    return jsonify({"status": "error", "message": "Invalid OTP"})
+
 @app.route('/logout')
 def logout():
     session.pop('user_name', None)
     return jsonify({"status": "success", "message": "Logged out"})
+
+@app.route('/api/session')
+def get_session():
+    if 'user_name' in session:
+        return jsonify({
+            "status": "success", 
+            "user": {
+                "name": session['user_name'],
+                "level": 14, 
+                "xp": 12450,
+                "maxXP": 15000
+            }
+        })
+    return jsonify({"status": "error", "message": "Not logged in"}), 401
 
 @app.route('/play/<course_id>')
 def play_course(course_id):

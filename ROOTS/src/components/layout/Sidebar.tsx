@@ -2,12 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Leaf, Home, Map, BookOpen, Flame, User } from "lucide-react";
-import { mockUser } from "../../lib/mockUser";
+import { Leaf, Home, Map, BookOpen, Flame, User, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 export const Sidebar = () => {
   const pathname = usePathname();
+  const [userData, setUserData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/session")
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          setUserData(data.user);
+        }
+      })
+      .catch(err => console.error("Session fetch failed", err));
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/logout");
+    window.location.href = "/";
+  };
 
   const navItems = [
     { label: "Home", href: "/home", icon: Home },
@@ -45,27 +62,36 @@ export const Sidebar = () => {
         })}
       </nav>
 
-      <div className="mt-auto bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border-glass)]">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-green)] shadow-[var(--glow-green)] bg-[#1a2835] overflow-hidden" />
-          <div>
-            <div className="font-medium text-sm text-[var(--text-primary)]">{mockUser.name}</div>
-            <div className="text-xs text-[var(--text-muted)]">Lv. 14</div>
+      <div className="mt-auto space-y-4">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-4 px-4 py-3 w-full text-[var(--text-muted)] hover:text-red-400 hover:bg-red-400/5 rounded-lg transition-all"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="font-medium">Logout</span>
+        </button>
+
+        <div className="bg-[var(--bg-surface)] rounded-xl p-4 border border-[var(--border-glass)]">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full border-2 border-[var(--accent-green)] shadow-[var(--glow-green)] bg-[#1a2835] overflow-hidden" />
+            <div>
+              <div className="font-medium text-sm text-[var(--text-primary)] truncate max-w-[120px]">
+                {userData ? userData.name : "Loading..."}
+              </div>
+              <div className="text-xs text-[var(--text-muted)]">Lv. {userData?.level || 1}</div>
+            </div>
           </div>
-        </div>
-        
-        <div className="w-full bg-[#050a0e] rounded-full h-2 mb-1 overflow-hidden">
-          <motion.div 
-            initial={{ width: 0 }}
-            animate={{ width: `${(mockUser.xp / mockUser.maxXP) * 100}%` }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="h-full bg-[var(--accent-green)] relative"
-          >
-             <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent blur-sm animate-pulse-glow" />
-          </motion.div>
-        </div>
-        <div className="text-[10px] text-right text-[var(--text-muted)] mt-1">
-          {mockUser.xp.toLocaleString()} / {mockUser.maxXP.toLocaleString()} XP
+          
+          <div className="w-full bg-[#050a0e] rounded-full h-2 mb-1 overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: userData ? `${(userData.xp / userData.maxXP) * 100}%` : "0%" }}
+              transition={{ duration: 1.5, ease: "easeOut" }}
+              className="h-full bg-[var(--accent-green)] relative"
+            >
+               <div className="absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/30 to-transparent blur-sm animate-pulse-glow" />
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

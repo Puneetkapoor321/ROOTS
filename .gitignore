@@ -1,0 +1,17 @@
+# Databases
+users.db
+*.sqlite3
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+env/
+venv/
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
